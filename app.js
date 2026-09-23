@@ -1,6 +1,8 @@
 // Open-Meteo APIs are free and need no API key.
 const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+// Free IP-based location lookup (no API key), used to pick the starting city.
+const IP_LOCATION_URL = "https://get.geojs.io/v1/ip/geo.json";
 
 // WMO weather interpretation codes: https://open-meteo.com/en/docs
 const WEATHER_CODES = {
@@ -40,6 +42,7 @@ const button = form.querySelector("button");
 const statusEl = document.getElementById("status");
 const resultEl = document.getElementById("result");
 const suggestionsEl = document.getElementById("suggestions");
+const nearbyEl = document.getElementById("nearby");
 
 const MIN_CHARS = 3;
 const MAX_SUGGESTIONS = 10;
@@ -179,11 +182,13 @@ function showTooShortError() {
   setStatus(`Please enter at least ${MIN_CHARS} characters of the city name.`, true);
 }
 
-async function loadWeather(place) {
+async function loadWeather(place, { nearby = false } = {}) {
   const requestId = ++latestRequest;
   clearTimeout(suggestTimer);
   hideSuggestions();
-  input.value = placeLabel(place);
+  // Leave the box empty for the automatic lookup so the user can just start typing.
+  if (!nearby) input.value = placeLabel(place);
+  nearbyEl.hidden = !nearby;
   button.disabled = true;
   setStatus("Loading…");
 
@@ -292,3 +297,48 @@ form.addEventListener("submit", async (event) => {
     if (requestId === latestRequest) button.disabled = false;
   }
 });
+
+// ---- Starting location ----
+
+// Approximate location from the visitor's IP address.
+async function locateByIp() {
+  const data = await getJson(IP_LOCATION_URL);
+  const latitude = Number(data.latitude);
+  const longitude = Number(data.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { name: data.city || "Your area", admin1: data.region, country: data.country, latitude, longitude };
+}
+
+// Fallback: the city in the browser's time zone, e.g. "America/New_York" -> "New York".
+async function locateByTimeZone() {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  const city = zone.split("/").pop().replace(/_/g, " ");
+  if (city.length < MIN_CHARS || zone === "UTC") return null;
+  const [place] = await searchCities(city);
+  return place || null;
+}
+
+async function showLocalWeather() {
+  const startRequest = latestRequest;
+  setStatus("Finding weather near you…");
+
+  let place = null;
+  for (const locate of [locateByIp, locateByTimeZone]) {
+    try {
+      place = await locate();
+    } catch {
+      place = null;
+    }
+    if (place) break;
+  }
+
+  // Don't override anything the user started doing in the meantime.
+  if (latestRequest !== startRequest || input.value.trim()) return;
+  if (place) {
+    loadWeather(place, { nearby: true });
+  } else {
+    setStatus("");
+  }
+}
+
+showLocalWeather();

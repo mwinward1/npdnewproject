@@ -221,6 +221,16 @@ button:disabled {
   font-weight: 600;
 }
 
+.nearby {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .current {
   display: flex;
   align-items: center;
