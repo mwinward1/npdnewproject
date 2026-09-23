@@ -10,8 +10,20 @@
   <main>
     <h1>Weather Lookup</h1>
 
-    <form id="search-form" autocomplete="off">
-      <input id="city-input" type="text" placeholder="Enter a city, e.g. London" required aria-label="City" />
+    <form id="search-form" autocomplete="off" novalidate>
+      <div class="search-box">
+        <input
+          id="city-input"
+          type="text"
+          placeholder="Enter a city, e.g. London"
+          aria-label="City"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="suggestions"
+        />
+        <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+      </div>
       <button type="submit">Search</button>
     </form>
 

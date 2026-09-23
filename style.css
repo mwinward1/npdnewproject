@@ -47,15 +47,57 @@ form {
   gap: 8px;
 }
 
-input {
+.search-box {
+  position: relative;
   flex: 1;
   min-width: 0;
+}
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.suggestions li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.suggestions li.active,
+.suggestions li:hover {
+  background: var(--bg);
+}
+
+.suggestions .region {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+input {
+  width: 100%;
   padding: 10px 12px;
   font-size: 1rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--card);
   color: var(--text);
+}
+
+input[aria-invalid="true"] {
+  border-color: var(--error);
 }
 
 button {
