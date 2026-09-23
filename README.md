@@ -20,4 +20,5 @@ python3 -m http.server 8000
 
 - `index.html`: page markup
 - `style.css`: styles (light and dark mode)
-- `app.js`: API calls and rendering
+- `app.js`: API calls, search and rendering
+- `scene.js`: weather-matched sky backgrounds and cartoon characters

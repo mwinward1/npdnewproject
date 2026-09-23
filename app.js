@@ -82,7 +82,7 @@ async function getWeather(latitude, longitude) {
   const params = new URLSearchParams({
     latitude,
     longitude,
-    current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m",
+    current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day",
     daily: "weather_code,temperature_2m_max,temperature_2m_min",
     timezone: "auto",
   });
@@ -91,10 +91,14 @@ async function getWeather(latitude, longitude) {
 
 function render(place, weather) {
   const { current, current_units: units, daily } = weather;
-  const [text, icon] = describe(current.weather_code);
+  const [text] = describe(current.weather_code);
+  const kind = weatherKind(current.weather_code);
+  const isDay = current.is_day !== 0;
 
+  setScene(kind, isDay);
   document.getElementById("location").textContent = placeLabel(place);
-  document.getElementById("icon").textContent = icon;
+  document.getElementById("art").innerHTML = illustration(kind, isDay);
+  document.getElementById("tip").textContent = weatherTip(kind, isDay);
   document.getElementById("temperature").textContent =
     `${Math.round(current.temperature_2m)}${units.temperature_2m}`;
   document.getElementById("description").textContent = text;

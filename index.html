@@ -4,9 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Weather Lookup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body data-weather="clear" data-time="day">
+  <div id="sky" class="sky" aria-hidden="true"></div>
+
   <main>
     <h1>Weather Lookup</h1>
 
@@ -32,10 +37,13 @@
     <section id="result" hidden>
       <h2 id="location"></h2>
       <div class="current">
-        <span id="icon" class="icon"></span>
-        <span id="temperature" class="temperature"></span>
+        <div id="art" class="art" aria-hidden="true"></div>
+        <div>
+          <span id="temperature" class="temperature"></span>
+          <p id="description" class="description"></p>
+        </div>
       </div>
-      <p id="description" class="description"></p>
+      <p id="tip" class="tip"></p>
       <dl class="details">
         <div><dt>Feels like</dt><dd id="feels-like"></dd></div>
         <div><dt>Humidity</dt><dd id="humidity"></dd></div>
@@ -51,6 +59,7 @@
     </footer>
   </main>
 
+  <script src="scene.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

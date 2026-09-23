@@ -6,6 +6,13 @@
   --accent: #2563eb;
   --border: #e2e8f0;
   --error: #c0362c;
+  --display: "Fredoka", "Trebuchet MS", system-ui, sans-serif;
+  /* Dims the sky slightly in dark mode. */
+  --sky-dim: 0;
+
+  /* Sky gradient; swapped per weather below. */
+  --sky-top: #2f80ed;
+  --sky-bottom: #7cc8f5;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -17,8 +24,25 @@
     --accent: #60a5fa;
     --border: #2b3444;
     --error: #f87171;
+    --sky-dim: 0.35;
   }
 }
+
+/* ---- Weather skies ---- */
+
+body[data-weather="partly"] { --sky-top: #3a7bd5; --sky-bottom: #a9c9e8; }
+body[data-weather="cloudy"] { --sky-top: #56677a; --sky-bottom: #aab7c4; }
+body[data-weather="fog"]    { --sky-top: #74828c; --sky-bottom: #cfd8de; }
+body[data-weather="rain"]   { --sky-top: #2c3e50; --sky-bottom: #6b8499; }
+body[data-weather="snow"]   { --sky-top: #5f84ab; --sky-bottom: #dde7f1; }
+body[data-weather="storm"]  { --sky-top: #16142a; --sky-bottom: #4b4a6b; }
+
+body[data-time="night"]                         { --sky-top: #0a0f2a; --sky-bottom: #2b3a67; }
+body[data-time="night"][data-weather="cloudy"],
+body[data-time="night"][data-weather="fog"]     { --sky-top: #1b2230; --sky-bottom: #465264; }
+body[data-time="night"][data-weather="rain"]    { --sky-top: #111a26; --sky-bottom: #33485c; }
+body[data-time="night"][data-weather="snow"]    { --sky-top: #1d2b44; --sky-bottom: #50668a; }
+body[data-time="night"][data-weather="storm"]   { --sky-top: #07060f; --sky-bottom: #2a2940; }
 
 * {
   box-sizing: border-box;
@@ -26,12 +50,32 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg);
+  background: var(--sky-top);
   color: var(--text);
 }
 
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+}
+
+.sky::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: var(--sky-dim);
+}
+
 main {
+  position: relative;
+  z-index: 1;
   max-width: 560px;
   margin: 0 auto;
   padding: 32px 16px;
@@ -39,7 +83,11 @@ main {
 
 h1 {
   margin: 0 0 20px;
-  font-size: 1.75rem;
+  font-family: var(--display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
 }
 
 form {
@@ -66,8 +114,8 @@ form {
   list-style: none;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .suggestions li {
@@ -88,12 +136,18 @@ form {
 
 input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 16px;
   font-size: 1rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 2px solid transparent;
+  border-radius: 999px;
   background: var(--card);
   color: var(--text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
 }
 
 input[aria-invalid="true"] {
@@ -101,59 +155,132 @@ input[aria-invalid="true"] {
 }
 
 button {
-  padding: 10px 18px;
-  font-size: 1rem;
+  padding: 12px 22px;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 600;
   border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
+  border-radius: 999px;
+  background: #ffd23f;
+  color: #3b2a00;
   cursor: pointer;
+  box-shadow: 0 4px 0 #d9a400;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #d9a400;
+}
+
+button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: default;
+  transform: none;
 }
 
 #status {
   min-height: 1.5em;
+  margin: 12px 0;
+}
+
+#status:not(:empty) {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--card);
   color: var(--muted);
 }
 
 #status.error {
   color: var(--error);
+  font-weight: 600;
 }
 
 #result {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  animation: pop-in 0.4s ease-out;
 }
 
 #result h2 {
-  margin: 0 0 8px;
-  font-size: 1.25rem;
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: 1.35rem;
+  font-weight: 600;
 }
 
 .current {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
-.icon {
-  font-size: 3rem;
+.art {
+  flex: none;
+  width: 130px;
+  height: 130px;
+}
+
+.art svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.art .ink {
+  stroke: #3b2f2f;
+}
+
+.art .ink-fill {
+  fill: #3b2f2f;
+}
+
+.art .zzz {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 16px;
+  fill: #fff;
+  stroke: #475569;
+  stroke-width: 0.8;
+  animation: float-z 2.5s ease-in-out infinite;
+}
+
+.art .zzz.small {
+  font-size: 11px;
+  animation-delay: 0.6s;
 }
 
 .temperature {
-  font-size: 3rem;
-  font-weight: 600;
+  font-family: var(--display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .description {
-  margin: 4px 0 16px;
+  margin: 4px 0 0;
   color: var(--muted);
+}
+
+.tip {
+  margin: 8px 0 20px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--bg);
+  font-family: var(--display);
+  font-weight: 500;
 }
 
 .details {
@@ -175,7 +302,9 @@ button:disabled {
 
 h3 {
   margin: 0 0 8px;
-  font-size: 1rem;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 .forecast {
@@ -194,6 +323,7 @@ h3 {
 
 .forecast .range {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .forecast .low {
@@ -202,11 +332,144 @@ h3 {
 }
 
 footer {
+  display: inline-block;
   margin-top: 24px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
   font-size: 0.85rem;
-  color: var(--muted);
+  color: #fff;
 }
 
 footer a {
-  color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ---- Sky particles ---- */
+
+.star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.puff {
+  position: absolute;
+  left: -260px;
+  width: 220px;
+  height: 70px;
+  border-radius: 999px;
+  background: #fff;
+  filter: blur(6px);
+  animation: drift linear infinite;
+}
+
+.puff::before,
+.puff::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: inherit;
+}
+
+.puff::before {
+  width: 100px;
+  height: 100px;
+  left: 30px;
+  top: -45px;
+}
+
+.puff::after {
+  width: 80px;
+  height: 80px;
+  left: 110px;
+  top: -30px;
+}
+
+.rain {
+  position: absolute;
+  top: -60px;
+  width: 2px;
+  height: 50px;
+  background: linear-gradient(transparent, #cfe8ff);
+  animation: fall linear infinite;
+}
+
+.snow {
+  position: absolute;
+  top: -20px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff;
+  animation: snowfall linear infinite;
+}
+
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  animation: flash 7s infinite;
+}
+
+/* ---- Character animations ---- */
+
+.art .spin {
+  animation: spin 14s linear infinite;
+}
+
+.art .bob {
+  animation: bob 3s ease-in-out infinite;
+}
+
+.art .drop {
+  animation: drip 1s ease-in infinite;
+}
+
+.art .flake {
+  animation: drip 2.4s linear infinite;
+}
+
+.art .bolt {
+  animation: bolt 2.5s infinite;
+}
+
+.art .mist {
+  animation: mist 4s ease-in-out infinite;
+}
+
+@keyframes pop-in {
+  from { transform: translateY(12px) scale(0.98); opacity: 0.6; }
+  to   { transform: none; opacity: 1; }
+}
+
+@keyframes spin      { to { transform: rotate(360deg); } }
+@keyframes bob       { 50% { transform: translateY(-4px); } }
+@keyframes drip      { from { transform: translateY(-6px); opacity: 0; } 30% { opacity: 1; } to { transform: translateY(14px); opacity: 0; } }
+@keyframes bolt      { 0%, 60%, 100% { opacity: 1; } 65%, 75% { opacity: 0.2; } 70% { opacity: 1; } }
+@keyframes mist      { 50% { transform: translateX(6px); } }
+@keyframes float-z   { 50% { transform: translateY(-4px); } }
+@keyframes twinkle   { 50% { opacity: 0.25; } }
+@keyframes drift     { to { transform: translateX(calc(100vw + 520px)); } }
+@keyframes fall      { to { transform: translate(-40px, 110vh); } }
+@keyframes snowfall  { 50% { transform: translate(20px, 55vh); } to { transform: translate(-10px, 110vh); } }
+@keyframes flash     { 0%, 88%, 92%, 100% { opacity: 0; } 89% { opacity: 0.55; } 91% { opacity: 0.25; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  h1 { font-size: 1.9rem; }
+  .art { width: 100px; height: 100px; }
+  .temperature { font-size: 2.75rem; }
 }
