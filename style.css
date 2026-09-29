@@ -11,6 +11,8 @@
   --sky-dim: 0;
   --rain-bg: #e8f3fd;
   --rain-deep: #1f6fb8;
+  --food-bg: #fdf3e6;
+  --food-deep: #b45309;
 
   /* Sky gradient; swapped per weather below. */
   --sky-top: #2f80ed;
@@ -29,6 +31,8 @@
     --sky-dim: 0.35;
     --rain-bg: #16263a;
     --rain-deep: #5aaef5;
+    --food-bg: #2a2118;
+    --food-deep: #f5a55a;
   }
 }
 
@@ -483,6 +487,135 @@ h3 {
   margin: 10px 0 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+/* ---- Cook for the weather ---- */
+
+.food {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--food-bg);
+}
+
+.food h3 {
+  margin: 0;
+}
+
+.food-headline {
+  margin: 4px 0 12px;
+  color: var(--muted);
+}
+
+.recipes {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.recipes a {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.recipes a:hover .recipe-link {
+  text-decoration: underline;
+}
+
+.recipes a:focus-visible {
+  outline: 2px solid var(--food-deep);
+  outline-offset: 2px;
+}
+
+.recipe-icon {
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.recipe-text {
+  display: grid;
+}
+
+.recipe-why {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.recipe-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--food-deep);
+  white-space: nowrap;
+}
+
+.food h4 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.season-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.produce {
+  display: grid;
+  gap: 10px;
+}
+
+.produce-label {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--display);
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 0.85rem;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.food-note {
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+@media (max-width: 420px) {
+  .recipes a {
+    grid-template-columns: 2rem 1fr;
+  }
+
+  .recipe-link {
+    grid-column: 2;
+  }
 }
 
 footer {

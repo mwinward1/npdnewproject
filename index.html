@@ -74,6 +74,24 @@
 
       <h3>Next 7 days</h3>
       <ul id="forecast" class="forecast"></ul>
+
+      <section class="food" aria-labelledby="food-title">
+        <h3 id="food-title">Cook for the weather</h3>
+        <p id="food-headline" class="food-headline"></p>
+        <ul id="recipes" class="recipes"></ul>
+        <h4>In season now <span id="season-label" class="season-label"></span></h4>
+        <div class="produce">
+          <div>
+            <span class="produce-label">Fruits</span>
+            <ul id="fruits" class="chips"></ul>
+          </div>
+          <div>
+            <span class="produce-label">Vegetables</span>
+            <ul id="veggies" class="chips"></ul>
+          </div>
+        </div>
+        <p class="food-note">Seasons vary by region, so treat this as a general guide.</p>
+      </section>
     </section>
 
     <footer>
@@ -84,6 +102,7 @@
 
   <script src="scene.js"></script>
   <script src="rain.js"></script>
+  <script src="food.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

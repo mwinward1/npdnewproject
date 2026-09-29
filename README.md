@@ -1,6 +1,6 @@
 # Weather Lookup
 
-A simple static web page: type a city name or US ZIP code and see the current weather, a Rain-o-meter with rain-gear advice, and a 7-day forecast.
+A simple static web page: type a city name or US ZIP code and see the current weather, a Rain-o-meter with rain-gear advice, a 7-day forecast, and recipe ideas with in-season fruit and vegetables.
 
 It uses the free, open-source [Open-Meteo](https://open-meteo.com/) APIs (no API key needed):
 
@@ -23,3 +23,4 @@ python3 -m http.server 8000
 - `app.js`: API calls, search and rendering
 - `scene.js`: weather-matched sky backgrounds and cartoon characters
 - `rain.js`: Rain-o-meter chance of rain and rain-gear advice
+- `food.js`: recipe ideas for the weather and country, and in-season produce

@@ -154,7 +154,55 @@ function render(place, weather) {
     })
   );
 
+  renderFood(place, kind, daily);
+
   resultEl.hidden = false;
+}
+
+function chipList(el, items) {
+  el.replaceChildren(
+    ...items.map((item) => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      return li;
+    })
+  );
+}
+
+function renderFood(place, kind, daily) {
+  const food = foodIdeas({ place, kind, tempMax: daily.temperature_2m_max[0], date: daily.time[0] });
+
+  document.getElementById("food-headline").textContent = food.headline;
+  document.getElementById("recipes").replaceChildren(
+    ...food.ideas.map((idea) => {
+      const li = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = idea.url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      const icon = document.createElement("span");
+      icon.className = "recipe-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = idea.icon;
+      const text = document.createElement("span");
+      text.className = "recipe-text";
+      const name = document.createElement("strong");
+      name.textContent = idea.name;
+      const why = document.createElement("span");
+      why.className = "recipe-why";
+      why.textContent = idea.why;
+      text.append(name, why);
+      const more = document.createElement("span");
+      more.className = "recipe-link";
+      more.textContent = "Find recipes ↗";
+      link.append(icon, text, more);
+      li.append(link);
+      return li;
+    })
+  );
+  document.getElementById("season-label").textContent = `(${food.season.label})`;
+  chipList(document.getElementById("fruits"), food.produce.fruits);
+  chipList(document.getElementById("veggies"), food.produce.veggies);
 }
 
 function renderRain(daily) {
@@ -362,7 +410,14 @@ async function locateByIp() {
   const latitude = Number(data.latitude);
   const longitude = Number(data.longitude);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
-  return { name: data.city || "Your area", admin1: data.region, country: data.country, latitude, longitude };
+  return {
+    name: data.city || "Your area",
+    admin1: data.region,
+    country: data.country,
+    country_code: data.country_code,
+    latitude,
+    longitude,
+  };
 }
 
 // Fallback: the city in the browser's time zone, e.g. "America/New_York" -> "New York".
