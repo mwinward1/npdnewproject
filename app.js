@@ -1,6 +1,8 @@
 // Open-Meteo APIs are free and need no API key.
 const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+// Free IP-based location lookup (no API key), used to pick the starting city.
+const IP_LOCATION_URL = "https://get.geojs.io/v1/ip/geo.json";
 
 // WMO weather interpretation codes: https://open-meteo.com/en/docs
 const WEATHER_CODES = {
@@ -40,6 +42,7 @@ const button = form.querySelector("button");
 const statusEl = document.getElementById("status");
 const resultEl = document.getElementById("result");
 const suggestionsEl = document.getElementById("suggestions");
+const nearbyEl = document.getElementById("nearby");
 
 const MIN_CHARS = 3;
 const MAX_SUGGESTIONS = 10;
@@ -68,22 +71,36 @@ async function getJson(url) {
   return response.json();
 }
 
-async function searchCities(name) {
-  const params = new URLSearchParams({ name, count: String(MAX_SUGGESTIONS), language: "en", format: "json" });
+// US ZIP code: 5 digits, optionally followed by -1234.
+const ZIP_PATTERN = /^(\d{5})(?:-\d{4})?$/;
+
+async function searchCities(query) {
+  const zip = query.trim().match(ZIP_PATTERN)?.[1];
+  const params = new URLSearchParams({
+    name: zip || query,
+    count: String(MAX_SUGGESTIONS),
+    language: "en",
+    format: "json",
+  });
+  // Open-Meteo also matches postal codes; limit 5-digit codes to the US.
+  if (zip) params.set("countryCode", "US");
   const data = await getJson(`${GEOCODING_URL}?${params}`);
-  return data.results || [];
+  const results = data.results || [];
+  return zip ? results.map((place) => ({ ...place, zip })) : results;
 }
 
 function placeLabel(place) {
-  return [place.name, place.admin1, place.country].filter(Boolean).join(", ");
+  const label = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
+  return place.zip ? `${label} (ZIP ${place.zip})` : label;
 }
 
 async function getWeather(latitude, longitude) {
   const params = new URLSearchParams({
     latitude,
     longitude,
-    current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m",
-    daily: "weather_code,temperature_2m_max,temperature_2m_min",
+    current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day",
+    daily:
+      "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max",
     timezone: "auto",
   });
   return getJson(`${FORECAST_URL}?${params}`);
@@ -91,10 +108,14 @@ async function getWeather(latitude, longitude) {
 
 function render(place, weather) {
   const { current, current_units: units, daily } = weather;
-  const [text, icon] = describe(current.weather_code);
+  const [text] = describe(current.weather_code);
+  const kind = weatherKind(current.weather_code);
+  const isDay = current.is_day !== 0;
 
+  setScene(kind, isDay);
   document.getElementById("location").textContent = placeLabel(place);
-  document.getElementById("icon").textContent = icon;
+  document.getElementById("art").innerHTML = illustration(kind, isDay);
+  document.getElementById("tip").textContent = weatherTip(kind, isDay);
   document.getElementById("temperature").textContent =
     `${Math.round(current.temperature_2m)}${units.temperature_2m}`;
   document.getElementById("description").textContent = text;
@@ -104,6 +125,8 @@ function render(place, weather) {
     `${current.relative_humidity_2m}${units.relative_humidity_2m}`;
   document.getElementById("wind").textContent =
     `${Math.round(current.wind_speed_10m)} ${units.wind_speed_10m}`;
+
+  renderRain(daily);
 
   const forecastEl = document.getElementById("forecast");
   forecastEl.replaceChildren(
@@ -115,17 +138,105 @@ function render(place, weather) {
       li.innerHTML = `
         <span class="day"></span>
         <span class="day-icon"></span>
+        <span class="day-rain"></span>
         <span class="range"><span class="high"></span><span class="low"></span></span>`;
       li.querySelector(".day").textContent = i === 0 ? "Today" : day;
       li.querySelector(".day-icon").textContent = dayIcon;
       li.querySelector(".day-icon").title = dayText;
+      const chance = daily.precipitation_probability_max?.[i];
+      if (chance !== null && chance !== undefined) {
+        li.querySelector(".day-rain").textContent = `💧 ${Math.round(chance)}%`;
+        li.querySelector(".day-rain").title = "Chance of rain";
+      }
       li.querySelector(".high").textContent = `${Math.round(daily.temperature_2m_max[i])}°`;
       li.querySelector(".low").textContent = `${Math.round(daily.temperature_2m_min[i])}°`;
       return li;
     })
   );
 
+  renderFood(place, kind, daily);
+
   resultEl.hidden = false;
+}
+
+function chipList(el, items) {
+  el.replaceChildren(
+    ...items.map((item) => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      return li;
+    })
+  );
+}
+
+function renderFood(place, kind, daily) {
+  const food = foodIdeas({ place, kind, tempMax: daily.temperature_2m_max[0], date: daily.time[0] });
+
+  document.getElementById("food-headline").textContent = food.headline;
+  document.getElementById("recipes").replaceChildren(
+    ...food.ideas.map((idea) => {
+      const li = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = idea.url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      const icon = document.createElement("span");
+      icon.className = "recipe-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = idea.icon;
+      const text = document.createElement("span");
+      text.className = "recipe-text";
+      const name = document.createElement("strong");
+      name.textContent = idea.name;
+      const why = document.createElement("span");
+      why.className = "recipe-why";
+      why.textContent = idea.why;
+      text.append(name, why);
+      const more = document.createElement("span");
+      more.className = "recipe-link";
+      more.textContent = "Find recipes ↗";
+      link.append(icon, text, more);
+      li.append(link);
+      return li;
+    })
+  );
+  document.getElementById("season-label").textContent = `(${food.season.label})`;
+  chipList(document.getElementById("fruits"), food.produce.fruits);
+  chipList(document.getElementById("veggies"), food.produce.veggies);
+}
+
+function renderRain(daily) {
+  const rain = rainOutlook({
+    chance: daily.precipitation_probability_max?.[0] ?? null,
+    amount: daily.precipitation_sum?.[0] ?? 0,
+    windMax: daily.wind_speed_10m_max?.[0] ?? 0,
+    code: daily.weather_code[0],
+  });
+
+  const meter = document.getElementById("rain-meter");
+  meter.style.setProperty("--level", `${rain.percent}%`);
+  meter.setAttribute("aria-valuenow", String(rain.percent));
+  meter.setAttribute("aria-valuetext", `${rain.percent}% chance of rain, ${rain.level}`);
+  meter.dataset.level = rain.level.toLowerCase();
+
+  document.getElementById("rain-chance").textContent = `${rain.known ? "" : "~"}${rain.percent}%`;
+  document.getElementById("rain-caption").textContent = rain.known
+    ? "chance of rain today"
+    : "estimated from expected rainfall";
+  document.getElementById("rain-level").textContent = rain.level;
+  document.getElementById("rain-amount").textContent = rain.amountText;
+  document.getElementById("rain-note").textContent = rain.note;
+  document.getElementById("rain-gear").replaceChildren(
+    ...rain.gear.map(([icon, name]) => {
+      const li = document.createElement("li");
+      const iconEl = document.createElement("span");
+      iconEl.className = "gear-icon";
+      iconEl.setAttribute("aria-hidden", "true");
+      iconEl.textContent = icon;
+      li.append(iconEl, name);
+      return li;
+    })
+  );
 }
 
 function hideSuggestions() {
@@ -148,7 +259,7 @@ function showSuggestions(places) {
       li.textContent = place.name;
       const region = document.createElement("span");
       region.className = "region";
-      region.textContent = [place.admin1, place.country].filter(Boolean).join(", ");
+      region.textContent = [place.zip && `ZIP ${place.zip}`, place.admin1, place.country].filter(Boolean).join(", ");
       li.append(region);
       return li;
     })
@@ -175,11 +286,13 @@ function showTooShortError() {
   setStatus(`Please enter at least ${MIN_CHARS} characters of the city name.`, true);
 }
 
-async function loadWeather(place) {
+async function loadWeather(place, { nearby = false } = {}) {
   const requestId = ++latestRequest;
   clearTimeout(suggestTimer);
   hideSuggestions();
-  input.value = placeLabel(place);
+  // Leave the box empty for the automatic lookup so the user can just start typing.
+  if (!nearby) input.value = placeLabel(place);
+  nearbyEl.hidden = !nearby;
   button.disabled = true;
   setStatus("Loading…");
 
@@ -288,3 +401,55 @@ form.addEventListener("submit", async (event) => {
     if (requestId === latestRequest) button.disabled = false;
   }
 });
+
+// ---- Starting location ----
+
+// Approximate location from the visitor's IP address.
+async function locateByIp() {
+  const data = await getJson(IP_LOCATION_URL);
+  const latitude = Number(data.latitude);
+  const longitude = Number(data.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return {
+    name: data.city || "Your area",
+    admin1: data.region,
+    country: data.country,
+    country_code: data.country_code,
+    latitude,
+    longitude,
+  };
+}
+
+// Fallback: the city in the browser's time zone, e.g. "America/New_York" -> "New York".
+async function locateByTimeZone() {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  const city = zone.split("/").pop().replace(/_/g, " ");
+  if (city.length < MIN_CHARS || zone === "UTC") return null;
+  const [place] = await searchCities(city);
+  return place || null;
+}
+
+async function showLocalWeather() {
+  const startRequest = latestRequest;
+  setStatus("Finding weather near you…");
+
+  let place = null;
+  for (const locate of [locateByIp, locateByTimeZone]) {
+    try {
+      place = await locate();
+    } catch {
+      place = null;
+    }
+    if (place) break;
+  }
+
+  // Don't override anything the user started doing in the meantime.
+  if (latestRequest !== startRequest || input.value.trim()) return;
+  if (place) {
+    loadWeather(place, { nearby: true });
+  } else {
+    setStatus("");
+  }
+}
+
+showLocalWeather();

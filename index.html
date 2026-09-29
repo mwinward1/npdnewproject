@@ -4,9 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Weather Lookup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body data-weather="clear" data-time="day">
+  <div id="sky" class="sky" aria-hidden="true"></div>
+
   <main>
     <h1>Weather Lookup</h1>
 
@@ -15,8 +20,8 @@
         <input
           id="city-input"
           type="text"
-          placeholder="Enter a city, e.g. London"
-          aria-label="City"
+          placeholder="City or ZIP code, e.g. London or 10001"
+          aria-label="City or ZIP code"
           role="combobox"
           aria-autocomplete="list"
           aria-expanded="false"
@@ -30,27 +35,74 @@
     <p id="status" role="status"></p>
 
     <section id="result" hidden>
+      <p id="nearby" class="nearby" hidden>📍 Near you, based on your approximate location</p>
       <h2 id="location"></h2>
       <div class="current">
-        <span id="icon" class="icon"></span>
-        <span id="temperature" class="temperature"></span>
+        <div id="art" class="art" aria-hidden="true"></div>
+        <div>
+          <span id="temperature" class="temperature"></span>
+          <p id="description" class="description"></p>
+        </div>
       </div>
-      <p id="description" class="description"></p>
+      <p id="tip" class="tip"></p>
       <dl class="details">
         <div><dt>Feels like</dt><dd id="feels-like"></dd></div>
         <div><dt>Humidity</dt><dd id="humidity"></dd></div>
         <div><dt>Wind</dt><dd id="wind"></dd></div>
       </dl>
 
+      <section class="rain-o-meter" aria-labelledby="rain-title">
+        <div class="rain-head">
+          <h3 id="rain-title">Rain-o-meter</h3>
+          <span id="rain-level" class="rain-level"></span>
+        </div>
+        <p class="rain-reading">
+          <span id="rain-chance" class="rain-chance"></span>
+          <span id="rain-caption" class="rain-caption">chance of rain today</span>
+        </p>
+        <div id="rain-meter" class="meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-labelledby="rain-title">
+          <div class="meter-fill"></div>
+        </div>
+        <div class="meter-scale" aria-hidden="true">
+          <span>Dry</span><span>Maybe</span><span>Likely</span><span>Soaked</span>
+        </div>
+        <p id="rain-amount" class="rain-amount"></p>
+        <h4>What to bring</h4>
+        <ul id="rain-gear" class="gear"></ul>
+        <p id="rain-note" class="rain-note"></p>
+      </section>
+
       <h3>Next 7 days</h3>
       <ul id="forecast" class="forecast"></ul>
+
+      <section class="food" aria-labelledby="food-title">
+        <h3 id="food-title">Cook for the weather</h3>
+        <p id="food-headline" class="food-headline"></p>
+        <ul id="recipes" class="recipes"></ul>
+        <h4>In season now <span id="season-label" class="season-label"></span></h4>
+        <div class="produce">
+          <div>
+            <span class="produce-label">Fruits</span>
+            <ul id="fruits" class="chips"></ul>
+          </div>
+          <div>
+            <span class="produce-label">Vegetables</span>
+            <ul id="veggies" class="chips"></ul>
+          </div>
+        </div>
+        <p class="food-note">Seasons vary by region, so treat this as a general guide.</p>
+      </section>
     </section>
 
     <footer>
       Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+      · Location by <a href="https://www.geojs.io/" target="_blank" rel="noopener">GeoJS</a>
     </footer>
   </main>
 
+  <script src="scene.js"></script>
+  <script src="rain.js"></script>
+  <script src="food.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
