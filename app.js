@@ -71,14 +71,27 @@ async function getJson(url) {
   return response.json();
 }
 
-async function searchCities(name) {
-  const params = new URLSearchParams({ name, count: String(MAX_SUGGESTIONS), language: "en", format: "json" });
+// US ZIP code: 5 digits, optionally followed by -1234.
+const ZIP_PATTERN = /^(\d{5})(?:-\d{4})?$/;
+
+async function searchCities(query) {
+  const zip = query.trim().match(ZIP_PATTERN)?.[1];
+  const params = new URLSearchParams({
+    name: zip || query,
+    count: String(MAX_SUGGESTIONS),
+    language: "en",
+    format: "json",
+  });
+  // Open-Meteo also matches postal codes; limit 5-digit codes to the US.
+  if (zip) params.set("countryCode", "US");
   const data = await getJson(`${GEOCODING_URL}?${params}`);
-  return data.results || [];
+  const results = data.results || [];
+  return zip ? results.map((place) => ({ ...place, zip })) : results;
 }
 
 function placeLabel(place) {
-  return [place.name, place.admin1, place.country].filter(Boolean).join(", ");
+  const label = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
+  return place.zip ? `${label} (ZIP ${place.zip})` : label;
 }
 
 async function getWeather(latitude, longitude) {
@@ -86,7 +99,8 @@ async function getWeather(latitude, longitude) {
     latitude,
     longitude,
     current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day",
-    daily: "weather_code,temperature_2m_max,temperature_2m_min",
+    daily:
+      "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max",
     timezone: "auto",
   });
   return getJson(`${FORECAST_URL}?${params}`);
@@ -112,6 +126,8 @@ function render(place, weather) {
   document.getElementById("wind").textContent =
     `${Math.round(current.wind_speed_10m)} ${units.wind_speed_10m}`;
 
+  renderRain(daily);
+
   const forecastEl = document.getElementById("forecast");
   forecastEl.replaceChildren(
     ...daily.time.map((date, i) => {
@@ -122,10 +138,16 @@ function render(place, weather) {
       li.innerHTML = `
         <span class="day"></span>
         <span class="day-icon"></span>
+        <span class="day-rain"></span>
         <span class="range"><span class="high"></span><span class="low"></span></span>`;
       li.querySelector(".day").textContent = i === 0 ? "Today" : day;
       li.querySelector(".day-icon").textContent = dayIcon;
       li.querySelector(".day-icon").title = dayText;
+      const chance = daily.precipitation_probability_max?.[i];
+      if (chance !== null && chance !== undefined) {
+        li.querySelector(".day-rain").textContent = `💧 ${Math.round(chance)}%`;
+        li.querySelector(".day-rain").title = "Chance of rain";
+      }
       li.querySelector(".high").textContent = `${Math.round(daily.temperature_2m_max[i])}°`;
       li.querySelector(".low").textContent = `${Math.round(daily.temperature_2m_min[i])}°`;
       return li;
@@ -133,6 +155,40 @@ function render(place, weather) {
   );
 
   resultEl.hidden = false;
+}
+
+function renderRain(daily) {
+  const rain = rainOutlook({
+    chance: daily.precipitation_probability_max?.[0] ?? null,
+    amount: daily.precipitation_sum?.[0] ?? 0,
+    windMax: daily.wind_speed_10m_max?.[0] ?? 0,
+    code: daily.weather_code[0],
+  });
+
+  const meter = document.getElementById("rain-meter");
+  meter.style.setProperty("--level", `${rain.percent}%`);
+  meter.setAttribute("aria-valuenow", String(rain.percent));
+  meter.setAttribute("aria-valuetext", `${rain.percent}% chance of rain, ${rain.level}`);
+  meter.dataset.level = rain.level.toLowerCase();
+
+  document.getElementById("rain-chance").textContent = `${rain.known ? "" : "~"}${rain.percent}%`;
+  document.getElementById("rain-caption").textContent = rain.known
+    ? "chance of rain today"
+    : "estimated from expected rainfall";
+  document.getElementById("rain-level").textContent = rain.level;
+  document.getElementById("rain-amount").textContent = rain.amountText;
+  document.getElementById("rain-note").textContent = rain.note;
+  document.getElementById("rain-gear").replaceChildren(
+    ...rain.gear.map(([icon, name]) => {
+      const li = document.createElement("li");
+      const iconEl = document.createElement("span");
+      iconEl.className = "gear-icon";
+      iconEl.setAttribute("aria-hidden", "true");
+      iconEl.textContent = icon;
+      li.append(iconEl, name);
+      return li;
+    })
+  );
 }
 
 function hideSuggestions() {
@@ -155,7 +211,7 @@ function showSuggestions(places) {
       li.textContent = place.name;
       const region = document.createElement("span");
       region.className = "region";
-      region.textContent = [place.admin1, place.country].filter(Boolean).join(", ");
+      region.textContent = [place.zip && `ZIP ${place.zip}`, place.admin1, place.country].filter(Boolean).join(", ");
       li.append(region);
       return li;
     })

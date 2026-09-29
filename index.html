@@ -20,8 +20,8 @@
         <input
           id="city-input"
           type="text"
-          placeholder="Enter a city, e.g. London"
-          aria-label="City"
+          placeholder="City or ZIP code, e.g. London or 10001"
+          aria-label="City or ZIP code"
           role="combobox"
           aria-autocomplete="list"
           aria-expanded="false"
@@ -51,6 +51,27 @@
         <div><dt>Wind</dt><dd id="wind"></dd></div>
       </dl>
 
+      <section class="rain-o-meter" aria-labelledby="rain-title">
+        <div class="rain-head">
+          <h3 id="rain-title">Rain-o-meter</h3>
+          <span id="rain-level" class="rain-level"></span>
+        </div>
+        <p class="rain-reading">
+          <span id="rain-chance" class="rain-chance"></span>
+          <span id="rain-caption" class="rain-caption">chance of rain today</span>
+        </p>
+        <div id="rain-meter" class="meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-labelledby="rain-title">
+          <div class="meter-fill"></div>
+        </div>
+        <div class="meter-scale" aria-hidden="true">
+          <span>Dry</span><span>Maybe</span><span>Likely</span><span>Soaked</span>
+        </div>
+        <p id="rain-amount" class="rain-amount"></p>
+        <h4>What to bring</h4>
+        <ul id="rain-gear" class="gear"></ul>
+        <p id="rain-note" class="rain-note"></p>
+      </section>
+
       <h3>Next 7 days</h3>
       <ul id="forecast" class="forecast"></ul>
     </section>
@@ -62,6 +83,7 @@
   </main>
 
   <script src="scene.js"></script>
+  <script src="rain.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
