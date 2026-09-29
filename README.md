@@ -16,6 +16,13 @@ A simple static web page: type a city name or US ZIP code and see the current we
 | F8 | Search by US ZIP code | #18 |
 | F9 | Cook for the weather: recipe ideas and in-season produce | #20 |
 
+### Planned (decided 2026-09-29)
+
+- US visitors default to °F, mph and inches (#11).
+- Ask for consent before sending the visitor's IP address to GeoJS (#12).
+- Remember the last searched city between visits (#13).
+- Recipe links stay as a general recipe search for now.
+
 Requirements, user stories (Gherkin) and scope are in the [Weather Lookup PRD](https://claude.ai/code/artifact/84fa999c-150b-4d3c-a29b-eb82cfbfa9b5); work is tracked under epic #3.
 
 ## Data sources
@@ -24,7 +31,7 @@ All free, with no API key:
 
 - [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) turns a city name or ZIP code into latitude and longitude.
 - [Open-Meteo Forecast API](https://open-meteo.com/en/docs) gets current conditions, the daily forecast and rain probability.
-- [GeoJS](https://www.geojs.io/) finds the visitor's approximate location from their IP address.
+- [GeoJS](https://www.geojs.io/) finds the visitor's approximate location from their IP address. (Planned: only after the visitor agrees, #12.)
 
 Recipe and produce suggestions come from lists built into `food.js`; each dish links to a web search for recipes.
 
